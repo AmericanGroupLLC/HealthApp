@@ -128,3 +128,17 @@ distribution/staging-*/
 # === added-by-productionize-plan: keep desktop/build assets ===
 !desktop/build/
 !desktop/build/**
+
+# ── Health Connect / HealthKit ──────────────────────────────────────
+# Generated permission manifests / cache & exported PHI dumps must never
+# land in the repo. Schemas under shared/schemas/ are intentionally tracked.
+android/app/src/main/assets/health-connect-permissions.cache
+android/wear/src/main/assets/health-connect-permissions.cache
+*.healthkit.export
+*.health-connect.export
+*.phi.json
+*.phi.csv
+*.phi.sqlite
+*.phi.sqlite-journal
+phi-export/
+audit-log-export/

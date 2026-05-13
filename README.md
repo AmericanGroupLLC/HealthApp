@@ -1,4 +1,6 @@
-# MyHealth 🔥 — Your Personal Fitness OS
+# HealthApp / MyHealth 🔥 — Your Personal Fitness OS
+
+> **Standalone repo** — split from the [`AmericanGroupLLC` umbrella](https://github.com/AmericanGroupLLC) of 8 sibling repos with full git history preserved. Largest of the family (Android Kotlin + Wear OS, ~455 files / 8 MB).
 
 [![CI](https://github.com/AmericanGroupLLC/HealthApp/actions/workflows/ci.yml/badge.svg)](https://github.com/AmericanGroupLLC/HealthApp/actions/workflows/ci.yml)
 [![Backend](https://github.com/AmericanGroupLLC/HealthApp/actions/workflows/backend.yml/badge.svg)](https://github.com/AmericanGroupLLC/HealthApp/actions/workflows/backend.yml)
@@ -160,6 +162,21 @@ Last-night sleep stages chart, 7-day HRV trend, 0–100 recovery score with traf
 
 ### 6. HealthKit Sync  🩺
 The iOS app's `iOSHealthKitManager` requests authorization for the full read set (steps, HR, HRV, RHR, sleep stages, dietary energy/protein/carbs/fat, water, mindful, workouts) and write set (water, body mass, dietary correlations, mindful sessions, workouts). The watchOS app's `HealthKitManager` mirrors this and writes back to HealthKit on every wrist log.
+
+---
+
+## 🚀 Quick start (Android + Wear OS)
+
+```bash
+cd android
+./gradlew :app:assembleDebug && ./gradlew :wear:assembleDebug
+```
+
+See [`QUICKSTART.md`](./QUICKSTART.md) for the full per-platform setup (iOS, watchOS, Expo, backend, marketing).
+
+## 📜 License
+
+[MIT](./LICENSE) © 2026 American Group LLC. See [`CHANGELOG.md`](./CHANGELOG.md) for release history and the umbrella org [`AmericanGroupLLC`](https://github.com/AmericanGroupLLC) for sibling repos.
 
 ---
 
