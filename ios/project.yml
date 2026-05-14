@@ -89,7 +89,9 @@ targets:
     info:
       path: MyHealthMessages/Info.plist
       properties:
+        CFBundleDisplayName: FitFusion Messages
         NSExtension:
+          NSExtensionPrincipalClass: MyHealthMessages.MessagesViewController
           NSExtensionPointIdentifier: com.apple.message-payload-provider
     entitlements:
       path: MyHealthMessages/MyHealthMessages.entitlements
