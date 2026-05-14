@@ -143,6 +143,13 @@ android/wear/src/main/assets/health-connect-permissions.cache
 phi-export/
 audit-log-export/
 
+# ── Signing secrets ─────────────────────────────────────────────────
+keystore.properties
+*.jks
+*.keystore
+ios/fastlane/report.xml
+ios/fastlane/README.md
+
 # ── Temporary test artifacts ────────────────────────────────────────
 *.png
 android_ui*.xml

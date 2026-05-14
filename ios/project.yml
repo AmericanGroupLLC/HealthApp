@@ -128,3 +128,5 @@ schemes:
         - FitFusion
     run:
       config: Debug
+    archive:
+      config: Release

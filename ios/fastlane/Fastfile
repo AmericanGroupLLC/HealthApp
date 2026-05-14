@@ -1,0 +1,86 @@
+default_platform(:ios)
+
+XCODEPROJ   = "FitFusion.xcodeproj"
+SCHEME      = "FitFusion"
+BUNDLE_ID   = "com.fitfusion.ios"
+
+platform :ios do
+  desc "Run UI tests on simulator"
+  lane :test do
+    run_tests(
+      project: XCODEPROJ,
+      scheme: SCHEME,
+      devices: ["iPhone 16 Pro"],
+      clean: true,
+      code_coverage: true,
+      output_types: "junit,html",
+      output_directory: "fastlane/test_output"
+    )
+  end
+
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    setup_ci if is_ci
+
+    increment_build_number(
+      build_number: ENV["BUILD_NUMBER"] || (latest_testflight_build_number + 1).to_s,
+      xcodeproj: XCODEPROJ
+    )
+
+    build_app(
+      project: XCODEPROJ,
+      scheme: SCHEME,
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          BUNDLE_ID => ENV["PROVISIONING_PROFILE_NAME"] || "FitFusion AppStore",
+          "#{BUNDLE_ID}.widget" => ENV["WIDGET_PROFILE_NAME"] || "FitFusion Widget AppStore",
+          "#{BUNDLE_ID}.liveactivity" => ENV["LIVEACTIVITY_PROFILE_NAME"] || "FitFusion LiveActivity AppStore",
+          "#{BUNDLE_ID}.messages" => ENV["MESSAGES_PROFILE_NAME"] || "FitFusion Messages AppStore",
+        }
+      },
+      output_directory: "build",
+      output_name: "FitFusion.ipa"
+    )
+
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      apple_id: ENV["APPLE_ID"],
+      app_identifier: BUNDLE_ID
+    )
+  end
+
+  desc "Build and submit to App Store for review"
+  lane :release do
+    setup_ci if is_ci
+
+    increment_build_number(
+      build_number: ENV["BUILD_NUMBER"] || (latest_testflight_build_number + 1).to_s,
+      xcodeproj: XCODEPROJ
+    )
+
+    build_app(
+      project: XCODEPROJ,
+      scheme: SCHEME,
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          BUNDLE_ID => ENV["PROVISIONING_PROFILE_NAME"] || "FitFusion AppStore",
+          "#{BUNDLE_ID}.widget" => ENV["WIDGET_PROFILE_NAME"] || "FitFusion Widget AppStore",
+          "#{BUNDLE_ID}.liveactivity" => ENV["LIVEACTIVITY_PROFILE_NAME"] || "FitFusion LiveActivity AppStore",
+          "#{BUNDLE_ID}.messages" => ENV["MESSAGES_PROFILE_NAME"] || "FitFusion Messages AppStore",
+        }
+      },
+      output_directory: "build",
+      output_name: "FitFusion.ipa"
+    )
+
+    upload_to_app_store(
+      skip_screenshots: true,
+      skip_metadata: false,
+      submit_for_review: false,
+      automatic_release: false,
+      app_identifier: BUNDLE_ID
+    )
+  end
+end

@@ -74,11 +74,9 @@ android {
             enableAndroidTestCoverage = true
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Use the upload key when keystore.properties is present (CI / local
-            // release builds); otherwise fall back to the debug key so a release
-            // build still produces a runnable, locally-signed artefact.
             signingConfig = signingConfigs.findByName("release")
                 ?: signingConfigs.findByName("debug")
         }

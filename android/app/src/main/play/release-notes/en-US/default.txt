@@ -1,0 +1,7 @@
+Initial release of FitFusion — your all-in-one health & fitness companion.
+
+• Care: Connect MyChart, scan insurance cards, snap lab reports
+• Diet: Track meals, macros, water intake, browse meal plans
+• Train: Follow daily training plans, log workouts, track progress
+• Workout: Activity rings, RPE ratings, run/walk tracker with GPS
+• HealthKit & Health Connect integration for automatic data sync

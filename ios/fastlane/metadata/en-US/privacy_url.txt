@@ -1,0 +1,1 @@
+FitFusion reads and writes health data (workouts, nutrition, vitals) to Apple Health. Your data stays on your device and is never sold to third parties. Health data is synced to our servers only when you explicitly enable cloud backup in Settings, and is encrypted in transit and at rest.
