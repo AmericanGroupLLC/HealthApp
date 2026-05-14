@@ -54,10 +54,12 @@ android {
         buildConfig = true
     }
 
-    signingConfigs {
-        create("release") {
-            val ksProps = rootProject.file("keystore.properties")
-            if (ksProps.exists()) {
+    val ksProps = rootProject.file("keystore.properties")
+    val hasReleaseKeystore = ksProps.exists()
+
+    if (hasReleaseKeystore) {
+        signingConfigs {
+            create("release") {
                 val props = Properties()
                 props.load(ksProps.inputStream())
                 storeFile     = file(props.getProperty("storeFile"))
@@ -77,8 +79,11 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.findByName("release")
-                ?: signingConfigs.findByName("debug")
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
     compileOptions {
