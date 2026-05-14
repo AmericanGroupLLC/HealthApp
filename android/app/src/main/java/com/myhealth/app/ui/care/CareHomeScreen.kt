@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Newspaper
+import androidx.compose.material.icons.filled.Mood
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -30,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,21 +41,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.myhealth.app.health.HealthConnectGateway
 import com.myhealth.app.ui.Routes
+import com.myhealth.app.ui.care.HealthScoreCard
 import com.myhealth.app.ui.shell.AppHeader
 import com.myhealth.app.ui.theme.CarePlusColor
 import com.myhealth.app.ui.theme.CareTab
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * Care tab home — top of the four-tab Care+ shell. Mirrors iOS
  * `Views/Care/CareHomeView.swift`.
  */
 @Composable
-fun CareHomeScreen(nav: NavController) {
+fun CareHomeScreen(nav: NavController, vm: CareHomeViewModel = hiltViewModel()) {
     val tint = CarePlusColor.CareBlue
     var myChartConnected by remember { mutableStateOf(false) }
     var insuranceUploaded by remember { mutableStateOf(false) }
+    val readings by vm.readings.collectAsState()
 
     Column(Modifier.fillMaxSize()) {
         AppHeader(
@@ -100,9 +113,9 @@ fun CareHomeScreen(nav: NavController) {
             // ── Care plan (per-condition) ────────────────────────
             item { SectionHeader("Care plan") }
             items(listOf("hypertension", "diabetest2", "stress")) { c ->
-                val recipe = com.myhealth.app.ui.care.CarePlanRecipe.recipe(c)
-                val reading = com.myhealth.app.ui.care.CarePlanRecipe.readingFor(c)
-                com.myhealth.app.ui.care.CarePlanCard(
+                val recipe = CarePlanRecipe.recipe(c)
+                val reading = readings[c]
+                CarePlanCard(
                     title = recipe.title,
                     goal = recipe.goal,
                     interventions = recipe.interventions,
@@ -112,6 +125,17 @@ fun CareHomeScreen(nav: NavController) {
             }
 
             // Quick links
+            // ── Health Score card ────────────────────────────
+            item { HealthScoreCard(nav = nav) }
+
+            // ── Mood tracking ────────────────────────────────────
+            item {
+                Tile(Icons.Filled.Mood, "Mood tracking",
+                    "Log how you feel. Track patterns over time.", tint) {
+                    nav.navigate(Routes.MOOD_TRACKING)
+                }
+            }
+
             item { SectionHeader("Find help") }
             item {
                 Tile(Icons.Filled.LocalHospital, "Doctors",
@@ -137,6 +161,37 @@ fun CareHomeScreen(nav: NavController) {
                 Tile(Icons.Filled.Medication, "Medicines",
                     "Reminders + adherence.", tint) { nav.navigate(Routes.MEDICINE) }
             }
+
+            // ── Suggested pharmacies ─────────────────────────
+            item { SectionHeader("Suggested pharmacies") }
+            items(com.myhealth.app.data.seed.VendorSuggestions.pharmacies) { v ->
+                Tile(Icons.Filled.LocalHospital, v.name, v.tagline, tint) { /* open v.url */ }
+            }
+        }
+    }
+}
+
+@HiltViewModel
+class CareHomeViewModel @Inject constructor(
+    private val hc: HealthConnectGateway,
+) : ViewModel() {
+    private val _readings = MutableStateFlow<Map<String, Pair<String, Boolean>?>>(emptyMap())
+    val readings = _readings.asStateFlow()
+
+    init { refresh() }
+
+    private fun refresh() = viewModelScope.launch {
+        try {
+            val bp = hc.latestBloodPressure()
+            val glucose = hc.latestBloodGlucose()
+            val rhr = hc.latestRestingHR()
+            val weight = hc.latestWeight()
+            val conditions = listOf("hypertension", "diabetest2", "stress")
+            _readings.value = conditions.associateWith { c ->
+                CarePlanRecipe.formatReading(c, bp, glucose, rhr, weight)
+            }
+        } catch (_: SecurityException) {
+            // Health Connect permissions not granted — show empty readings
         }
     }
 }

@@ -34,15 +34,17 @@ class LabReportOcr @Inject constructor() {
         val rawText: String = "",
     )
 
-    suspend fun read(bitmap: Bitmap, rotationDegrees: Int = 0): Result =
-        suspendCancellableCoroutine { cont ->
+    suspend fun read(bitmap: Bitmap, rotationDegrees: Int = 0): Result {
+        val rawText = suspendCancellableCoroutine { cont ->
             val image = InputImage.fromBitmap(bitmap, rotationDegrees)
             recognizer.process(image)
                 .addOnSuccessListener { v ->
-                    cont.resume(extract(v.text))
+                    cont.resume(v.text)
                 }
                 .addOnFailureListener { e -> cont.resumeWithException(e) }
         }
+        return extract(rawText)
+    }
 
     suspend fun extract(text: String): Result {
         val ext = StructuredExtractorRegistry.shared

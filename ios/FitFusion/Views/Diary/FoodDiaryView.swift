@@ -34,7 +34,7 @@ struct FoodDiaryView: View {
                 }
             }
             .sheet(isPresented: $showAdd) {
-                NavigationStack { FoodSearchView() }
+                NavigationStack { FoodSearchView { _ in reload() } }
             }
             .sheet(isPresented: $showCustomBuilder) {
                 CustomMealBuilderView { reload() }

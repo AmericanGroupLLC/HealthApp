@@ -29,6 +29,10 @@ class SettingsRepository @Inject constructor(
         // iOS HealthConditionsStore (storageKey = "healthConditions.v1") in
         // intent: on-device only, never sent off-device.
         val HEALTH_CONDITIONS = stringSetPreferencesKey("health_conditions_v1")
+        val GOAL = stringPreferencesKey("goal")
+        val REMINDER_HYDRATION = booleanPreferencesKey("reminder_hydration")
+        val REMINDER_EXERCISE = booleanPreferencesKey("reminder_exercise")
+        val REMINDER_SLEEP = booleanPreferencesKey("reminder_sleep")
     }
 
     val didOnboard: Flow<Boolean> = context.dataStore.data.map { it[Keys.DID_ONBOARD] ?: false }
@@ -40,6 +44,10 @@ class SettingsRepository @Inject constructor(
     val healthConditions: Flow<Set<String>> = context.dataStore.data.map {
         it[Keys.HEALTH_CONDITIONS] ?: setOf("none")
     }
+    val goal: Flow<String> = context.dataStore.data.map { it[Keys.GOAL] ?: "" }
+    val reminderHydration: Flow<Boolean> = context.dataStore.data.map { it[Keys.REMINDER_HYDRATION] ?: false }
+    val reminderExercise: Flow<Boolean> = context.dataStore.data.map { it[Keys.REMINDER_EXERCISE] ?: false }
+    val reminderSleep: Flow<Boolean> = context.dataStore.data.map { it[Keys.REMINDER_SLEEP] ?: false }
 
     suspend fun setDidOnboard(v: Boolean) = context.dataStore.edit { it[Keys.DID_ONBOARD] = v }
     suspend fun setThemeMode(v: String) = context.dataStore.edit { it[Keys.THEME_MODE] = v }
@@ -49,4 +57,9 @@ class SettingsRepository @Inject constructor(
     suspend fun setGuest(v: Boolean) = context.dataStore.edit { it[Keys.IS_GUEST] = v }
     suspend fun setHealthConditions(v: Set<String>) =
         context.dataStore.edit { it[Keys.HEALTH_CONDITIONS] = v }
+    suspend fun setGoal(v: String) = context.dataStore.edit { it[Keys.GOAL] = v }
+    suspend fun setReminderHydration(v: Boolean) = context.dataStore.edit { it[Keys.REMINDER_HYDRATION] = v }
+    suspend fun setReminderExercise(v: Boolean) = context.dataStore.edit { it[Keys.REMINDER_EXERCISE] = v }
+    suspend fun setReminderSleep(v: Boolean) = context.dataStore.edit { it[Keys.REMINDER_SLEEP] = v }
+    suspend fun clearAll() = context.dataStore.edit { it.clear() }
 }

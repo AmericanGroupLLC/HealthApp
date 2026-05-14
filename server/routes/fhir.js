@@ -1,7 +1,7 @@
 'use strict';
 
 const express = require('express');
-const auth = require('../middleware/auth');
+const { authRequired } = require('../middleware/auth');
 const router = express.Router();
 
 // FHIR proxy for resources the client can't fetch directly because of
@@ -25,7 +25,7 @@ const ALLOWED_RESOURCES = new Set([
   'Appointment',
 ]);
 
-router.use(auth);
+router.use(authRequired);
 
 router.get('/:resource/:id?', async (req, res) => {
   const { resource, id } = req.params;

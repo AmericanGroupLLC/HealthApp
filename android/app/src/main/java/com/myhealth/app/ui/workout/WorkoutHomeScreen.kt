@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,16 +39,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.myhealth.app.health.HealthConnectGateway
 import com.myhealth.app.ui.Routes
 import com.myhealth.app.ui.shell.AppHeader
 import com.myhealth.app.ui.theme.CarePlusColor
 import com.myhealth.app.ui.theme.CareTab
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 @Composable
-fun WorkoutHomeScreen(nav: NavController) {
+fun WorkoutHomeScreen(nav: NavController, vm: ActivityRingsViewModel = hiltViewModel()) {
     val tint = CarePlusColor.WorkoutPink
     var showRpe by remember { mutableStateOf(false) }
+    val rings by vm.state.collectAsState()
 
     Column(Modifier.fillMaxSize()) {
         AppHeader(
@@ -63,9 +75,9 @@ fun WorkoutHomeScreen(nav: NavController) {
             item {
                 Column(horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                    ActivityRings(move = 0.72f, exercise = 0.45f, stand = 0.85f)
+                    ActivityRings(move = rings.moveProgress, exercise = rings.exerciseProgress, stand = rings.standProgress)
                     Spacer(Modifier.height(12.dp))
-                    ActivityRingsStats(move = "420", exercise = "28", stand = "9/12")
+                    ActivityRingsStats(move = rings.stepsLabel, exercise = rings.exerciseLabel, stand = rings.standLabel)
                 }
             }
 
@@ -136,10 +148,53 @@ fun WorkoutHomeScreen(nav: NavController) {
                     "Weekly summary across cardio, strength, sleep.",
                     tint) { nav.navigate(Routes.WELLNESS_INSIGHTS) }
             }
+
+            // ── Suggested wearables & recovery ──────────────
+            item { Section("Suggested wearables & recovery") }
+            items(com.myhealth.app.data.seed.VendorSuggestions.wearables) { v ->
+                Tile(Icons.Filled.FitnessCenter, v.name, v.tagline, tint) { /* open v.url */ }
+            }
         }
     }
 
     if (showRpe) RpeRatingSheet(onDismiss = { showRpe = false })
+}
+
+data class ActivityRingsState(
+    val moveProgress: Float = 0f,
+    val exerciseProgress: Float = 0f,
+    val standProgress: Float = 0f,
+    val stepsLabel: String = "—",
+    val exerciseLabel: String = "—",
+    val standLabel: String = "—",
+)
+
+@HiltViewModel
+class ActivityRingsViewModel @Inject constructor(
+    private val hc: HealthConnectGateway,
+) : ViewModel() {
+    private val _state = MutableStateFlow(ActivityRingsState())
+    val state = _state.asStateFlow()
+
+    init { refresh() }
+
+    private fun refresh() = viewModelScope.launch {
+        val stepsGoal = 10_000L
+        val exerciseGoal = 30L
+        val standGoal = 12
+
+        val steps = runCatching { hc.stepsToday() }.getOrDefault(0)
+        val exerciseMin = runCatching { hc.exerciseMinutesToday() }.getOrDefault(0)
+
+        _state.value = ActivityRingsState(
+            moveProgress = (steps.toFloat() / stepsGoal).coerceAtMost(1f),
+            exerciseProgress = (exerciseMin.toFloat() / exerciseGoal).coerceAtMost(1f),
+            standProgress = 0f, // Health Connect has no stand-hours record on Android
+            stepsLabel = "$steps",
+            exerciseLabel = "${exerciseMin}m",
+            standLabel = "—/$standGoal",
+        )
+    }
 }
 
 @Composable

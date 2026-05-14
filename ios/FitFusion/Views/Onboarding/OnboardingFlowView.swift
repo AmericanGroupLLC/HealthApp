@@ -240,7 +240,7 @@ struct OnboardingFlowView: View {
                 }
                 Spacer()
                 Image(systemName: granted ? "checkmark.circle.fill" : "chevron.right")
-                    .foregroundStyle(granted ? CarePlusPalette.success : .tertiary)
+                    .foregroundStyle(granted ? CarePlusPalette.success : Color.gray)
             }
             .padding()
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))

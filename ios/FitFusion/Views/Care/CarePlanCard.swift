@@ -135,17 +135,12 @@ public enum CarePlanRecipe {
     }
 }
 
-/// Helper that returns a (reading, healthy) tuple per condition. Week 1
-/// returns nil unless we have a hardcoded demo value; week 2 wires
-/// HealthKit (`HKHealthStore`) for BP, glucose, HRV.
+/// Helper that returns a (reading, healthy) tuple per condition.
+/// Returns nil if no HealthKit data is available yet — the caller
+/// (CareHomeView) pre-loads readings via its own `.task` and passes
+/// them directly to CarePlanCard, so this is now only a fallback.
 public enum CarePlanReadings {
     public static func reading(for condition: HealthCondition) -> (String, Bool)? {
-        switch condition {
-        case .hypertension:     return ("138/88", false) // mocked; HK in week 2
-        case .diabetesT1, .diabetesT2: return ("A1C 6.1", false)
-        case .heartCondition:   return ("HR 72", true)
-        case .obesity:          return ("BMI 31", false)
-        default: return nil
-        }
+        return nil // readings are fetched live from HealthKit in CareHomeView
     }
 }

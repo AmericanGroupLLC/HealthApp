@@ -7,12 +7,13 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.myhealth.app.BuildConfig
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
 /**
  * Resolves the API base URL. Reads from [SettingsRepository] so the user
- * can override at runtime via Settings, falling back to the dev default.
+ * can override at runtime via Settings, falling back to the build config default.
  */
 @Singleton
 class ApiBaseUrl @Inject constructor(
@@ -21,7 +22,7 @@ class ApiBaseUrl @Inject constructor(
     val value: String
         get() {
             val stored = runBlocking { settings.apiBaseURL.first() }
-            return if (stored.isNotBlank()) stored else "http://10.0.2.2:4000" // emulator → host
+            return if (stored.isNotBlank()) stored else BuildConfig.API_BASE_URL
         }
 }
 

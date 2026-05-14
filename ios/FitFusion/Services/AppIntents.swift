@@ -18,9 +18,9 @@ struct StartWorkoutIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let template = WorkoutLibrary.templates.first {
+        let template = WorkoutLibrary.templates.first { tmpl in
             workoutName.flatMap { name in
-                $0.name.localizedCaseInsensitiveContains(name)
+                tmpl.name.localizedCaseInsensitiveContains(name)
             } ?? false
         } ?? WorkoutLibrary.templates.first!
 
@@ -123,7 +123,6 @@ struct FitFusionShortcuts: AppShortcutsProvider {
             intent: LogMealIntent(),
             phrases: [
                 "Log a meal in \(.applicationName)",
-                "Log \(\.$name) in \(.applicationName)",
             ],
             shortTitle: "Log Meal",
             systemImageName: "fork.knife"

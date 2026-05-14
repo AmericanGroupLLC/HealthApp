@@ -71,7 +71,7 @@ final class iOSHealthKitManager: ObservableObject {
         if #available(iOS 14.0, *) {
             t.insert(HKObjectType.electrocardiogramType())
         }
-        if #available(iOS 17.0, *) {
+        if #available(iOS 18.0, *) {
             t.insert(HKSampleType.stateOfMindType())
         }
         return t
@@ -93,7 +93,7 @@ final class iOSHealthKitManager: ObservableObject {
             HKCategoryType(.mindfulSession),
             HKObjectType.workoutType(),
         ]
-        if #available(iOS 17.0, *) {
+        if #available(iOS 18.0, *) {
             t.insert(HKSampleType.stateOfMindType())
         }
         return t
@@ -452,6 +452,112 @@ final class iOSHealthKitManager: ObservableObject {
         await averageQuantity(type: HKQuantityType(.restingHeartRate),
                               unit: HKUnit.count().unitDivided(by: .minute()),
                               daysBack: daysBack)
+    }
+
+    func latestQuantity(type: HKQuantityType, unit: HKUnit) async -> Double? {
+        guard isAvailable else { return nil }
+        let predicate = HKQuery.predicateForSamples(
+            withStart: Calendar.current.date(byAdding: .day, value: -30, to: Date()),
+            end: Date())
+        if #available(iOS 15.0, *) {
+            do {
+                let descriptor = HKSampleQueryDescriptor(
+                    predicates: [.quantitySample(type: type, predicate: predicate)],
+                    sortDescriptors: [SortDescriptor(\.startDate, order: .reverse)],
+                    limit: 1
+                )
+                return try await descriptor.result(for: store)
+                    .first?.quantity.doubleValue(for: unit)
+            } catch { return nil }
+        }
+        return nil
+    }
+
+    func workoutCount(daysBack: Int = 365) async -> Int {
+        guard isAvailable else { return 0 }
+        let cal = Calendar.current
+        guard let start = cal.date(byAdding: .day, value: -daysBack, to: Date()) else { return 0 }
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: Date())
+        if #available(iOS 15.0, *) {
+            do {
+                let descriptor = HKSampleQueryDescriptor(
+                    predicates: [.workout(predicate)],
+                    sortDescriptors: [SortDescriptor(\.startDate)],
+                    limit: HKObjectQueryNoLimit
+                )
+                return try await descriptor.result(for: store).count
+            } catch { return 0 }
+        }
+        return 0
+    }
+
+    func totalWorkoutMinutes(daysBack: Int = 7) async -> Double {
+        guard isAvailable else { return 0 }
+        let cal = Calendar.current
+        guard let start = cal.date(byAdding: .day, value: -daysBack, to: Date()) else { return 0 }
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: Date())
+        if #available(iOS 15.0, *) {
+            do {
+                let descriptor = HKSampleQueryDescriptor(
+                    predicates: [.workout(predicate)],
+                    sortDescriptors: [SortDescriptor(\.startDate)],
+                    limit: HKObjectQueryNoLimit
+                )
+                return try await descriptor.result(for: store)
+                    .reduce(0) { $0 + $1.duration / 60.0 }
+            } catch { return 0 }
+        }
+        return 0
+    }
+
+    func averageDailySteps(daysBack: Int = 365) async -> Double? {
+        guard isAvailable else { return nil }
+        let cal = Calendar.current
+        guard let start = cal.date(byAdding: .day, value: -daysBack, to: Date()) else { return nil }
+        let type = HKQuantityType(.stepCount)
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: Date())
+        if #available(iOS 15.0, *) {
+            do {
+                let descriptor = HKStatisticsQueryDescriptor(
+                    predicate: HKSamplePredicate.quantitySample(type: type, predicate: predicate),
+                    options: .cumulativeSum
+                )
+                let result = try await descriptor.result(for: store)
+                guard let sum = result?.sumQuantity()?.doubleValue(for: .count()) else { return nil }
+                return sum / Double(daysBack)
+            } catch { return nil }
+        }
+        return nil
+    }
+
+    func averageSleepHours(daysBack: Int = 365) async -> Double? {
+        guard isAvailable else { return nil }
+        let cal = Calendar.current
+        guard let start = cal.date(byAdding: .day, value: -daysBack, to: Date()) else { return nil }
+        let type = HKCategoryType(.sleepAnalysis)
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: Date())
+        if #available(iOS 15.0, *) {
+            do {
+                let descriptor = HKSampleQueryDescriptor(
+                    predicates: [.categorySample(type: type, predicate: predicate)],
+                    sortDescriptors: [SortDescriptor(\.startDate)],
+                    limit: HKObjectQueryNoLimit
+                )
+                let samples = try await descriptor.result(for: store)
+                let sleepValues: Set<Int> = [
+                    HKCategoryValueSleepAnalysis.asleepCore.rawValue,
+                    HKCategoryValueSleepAnalysis.asleepDeep.rawValue,
+                    HKCategoryValueSleepAnalysis.asleepREM.rawValue,
+                    HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue,
+                ]
+                let totalSec = samples
+                    .filter { sleepValues.contains($0.value) }
+                    .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+                guard daysBack > 0 else { return nil }
+                return totalSec / 3600.0 / Double(daysBack)
+            } catch { return nil }
+        }
+        return nil
     }
 
     private func averageQuantity(type: HKQuantityType, unit: HKUnit, daysBack: Int) async -> Double? {

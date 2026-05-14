@@ -23,8 +23,10 @@ public final class CloudStore: ObservableObject {
         if let description = container.persistentStoreDescriptions.first {
             description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
             description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+            #if !targetEnvironment(simulator)
             description.cloudKitContainerOptions =
                 NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.fitfusion")
+            #endif
         }
 
         container.loadPersistentStores { [weak self] _, error in
@@ -498,6 +500,36 @@ public final class CloudStore: ObservableObject {
             return []
         }
         return decoded
+    }
+
+    // MARK: - Symptoms
+
+    @discardableResult
+    public func addSymptom(bodyLocation: String,
+                           painScale: Int,
+                           durationHours: Double,
+                           notes: String?) -> NSManagedObject? {
+        let entity = NSEntityDescription.insertNewObject(forEntityName: "SymptomEntity", into: viewContext)
+        entity.setValue(UUID(), forKey: "id")
+        entity.setValue(bodyLocation, forKey: "bodyLocation")
+        entity.setValue(Int16(painScale), forKey: "painScale")
+        entity.setValue(durationHours, forKey: "durationHours")
+        entity.setValue(notes, forKey: "notes")
+        entity.setValue(Date(), forKey: "recordedAt")
+        save()
+        return entity
+    }
+
+    public func fetchSymptoms(limit: Int = 100) -> [NSManagedObject] {
+        let req = NSFetchRequest<NSManagedObject>(entityName: "SymptomEntity")
+        req.sortDescriptors = [NSSortDescriptor(key: "recordedAt", ascending: false)]
+        req.fetchLimit = limit
+        return (try? viewContext.fetch(req)) ?? []
+    }
+
+    public func deleteSymptom(_ obj: NSManagedObject) {
+        viewContext.delete(obj)
+        save()
     }
 
     // MARK: - Convenience: meals across the past N days (for Diary)

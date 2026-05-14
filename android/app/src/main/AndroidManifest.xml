@@ -51,7 +51,8 @@
 
     <application
         android:name=".MyHealthApp"
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -66,6 +67,9 @@
             android:authorities="${applicationId}.androidx-startup"
             tools:node="remove" />
 
+        <!-- Disable Sentry auto-initialization (no DSN configured for dev) -->
+        <meta-data android:name="io.sentry.auto-init" android:value="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -77,6 +81,13 @@
             <!-- Health Connect permissions rationale -->
             <intent-filter>
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
+            </intent-filter>
+            <!-- Deep link support for myhealth:// URIs -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="myhealth"/>
             </intent-filter>
         </activity>
 

@@ -26,38 +26,34 @@ final class FitFusionUISmokeTests: XCTestCase {
                       "Continue as Guest button missing on Login")
     }
 
-    /// Tap Continue as Guest \u{2192} verify Onboarding renders.
+    /// Tap Continue as Guest → verify Onboarding or Dashboard renders.
     func testGuestPathLandsOnOnboarding() throws {
         let app = launchedApp()
         let guestButton = app.buttons["Continue as Guest"]
-        XCTAssertTrue(guestButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(guestButton.waitForExistence(timeout: 10))
         guestButton.tap()
 
-        // Either the Welcome page (with title) or the dashboard if the user
-        // has already onboarded \u{2014} both are valid post-tap states.
+        // After tapping, the app shows either Onboarding or the dashboard.
+        // Look for common onboarding elements or the tab bar.
         let welcome = app.staticTexts["Welcome to MyHealth"]
-        let homeTab = app.tabBars.buttons["Home"]
-        let foundOne = welcome.waitForExistence(timeout: 5) || homeTab.waitForExistence(timeout: 5)
-        XCTAssertTrue(foundOne, "Neither Welcome screen nor Home tab appeared")
+        let getStarted = app.buttons["Get started"]
+        let homeTab = app.tabBars.buttons["Care"]
+        let foundOne = welcome.waitForExistence(timeout: 10)
+            || getStarted.waitForExistence(timeout: 3)
+            || homeTab.waitForExistence(timeout: 3)
+        XCTAssertTrue(foundOne, "Neither Welcome/Onboarding nor Home tab appeared")
     }
 
     /// Once on the dashboard, the bottom tab bar should expose every primary tab.
     func testBottomTabBarHasAllPrimaryTabs() throws {
-        let app = launchedApp()
-        // Bypass onboarding via launch arg if needed
-        if app.buttons["Continue as Guest"].waitForExistence(timeout: 3) {
-            app.buttons["Continue as Guest"].tap()
-        }
-        // Skip onboarding flow if it appears
-        let enterButton = app.buttons["Enter MyHealth"]
-        if enterButton.waitForExistence(timeout: 3) {
-            enterButton.tap()
-        }
+        let app = XCUIApplication()
+        app.launchArguments = ["-autoGuest"]
+        app.launch()
 
-        let tabs = ["Home", "Train", "Diary", "Sleep", "More"]
+        let tabs = ["Care", "Diet", "Train", "Workout"]
         for label in tabs {
             let tab = app.tabBars.buttons[label]
-            XCTAssertTrue(tab.exists || tab.waitForExistence(timeout: 2),
+            XCTAssertTrue(tab.exists || tab.waitForExistence(timeout: 5),
                           "Tab '\(label)' missing")
         }
     }

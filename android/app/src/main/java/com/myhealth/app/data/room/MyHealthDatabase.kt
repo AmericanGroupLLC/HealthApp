@@ -14,8 +14,9 @@ import androidx.room.RoomDatabase
         ExerciseLogEntity::class,
         CustomMealEntity::class,
         CustomWorkoutEntity::class,
+        SymptomLogEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 abstract class MyHealthDatabase : RoomDatabase() {
@@ -28,4 +29,5 @@ abstract class MyHealthDatabase : RoomDatabase() {
     abstract fun exerciseLogDao(): ExerciseLogDao
     abstract fun customMealDao(): CustomMealDao
     abstract fun customWorkoutDao(): CustomWorkoutDao
+    abstract fun symptomLogDao(): SymptomLogDao
 }

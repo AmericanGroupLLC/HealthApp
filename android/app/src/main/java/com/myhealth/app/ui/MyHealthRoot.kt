@@ -28,6 +28,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
+import androidx.compose.animation.*
 import com.myhealth.app.ui.activity.ActivityListScreen
 import com.myhealth.app.ui.anatomy.AnatomyScreen
 import com.myhealth.app.ui.articles.ArticlesScreen
@@ -38,24 +40,43 @@ import com.myhealth.app.ui.care.InsuranceCardScreen
 import com.myhealth.app.ui.care.LabReportScreen
 import com.myhealth.app.ui.care.MyChartConnectScreen
 import com.myhealth.app.ui.care.MyChartDataScreen
-import com.myhealth.app.ui.common.ComingSoon
+import com.myhealth.app.ui.care.AnnualReportsScreen
+import com.myhealth.app.ui.care.MoodTrackingScreen
+import com.myhealth.app.ui.care.SymptomsLogScreen
 import com.myhealth.app.ui.diary.DiaryScreen
 import com.myhealth.app.ui.diet.DietHomeScreen
+import com.myhealth.app.ui.diet.DietSuggestionsScreen
+import com.myhealth.app.ui.diet.FoodDiaryScreen
+import com.myhealth.app.ui.diet.MealPlanDetailScreen
+import com.myhealth.app.ui.diet.OrderCheckoutScreen
 import com.myhealth.app.ui.diet.VendorBrowseScreen
+import com.myhealth.app.ui.diet.WaterTrackerScreen
 import com.myhealth.app.ui.home.HomeScreen
 import com.myhealth.app.ui.medicine.MedicineListScreen
 import com.myhealth.app.ui.more.MoreScreen
 import com.myhealth.app.ui.news.NewsDrawerSheet
 import com.myhealth.app.ui.onboarding.OnboardingScreen
 import com.myhealth.app.ui.profile.ProfileScreen
+import com.myhealth.app.ui.run.LiveRunScreen
+import com.myhealth.app.ui.run.RunDetailScreen
+import com.myhealth.app.ui.run.RunTrackerScreen
 import com.myhealth.app.ui.settings.SettingsScreen
 import com.myhealth.app.ui.sleep.SleepScreen
+import com.myhealth.app.ui.social.ChallengeDetailScreen
+import com.myhealth.app.ui.social.CommunityHubScreen
 import com.myhealth.app.ui.theme.CareTab
+import com.myhealth.app.ui.train.ExerciseDetailScreen
+import com.myhealth.app.ui.train.ExerciseLibraryScreen
+import com.myhealth.app.ui.train.ProgressReportScreen
+import com.myhealth.app.ui.train.RecoveryDayScreen
 import com.myhealth.app.ui.train.StandupTimerScreen
+import com.myhealth.app.ui.train.TodayPlanScreen
 import com.myhealth.app.ui.train.TrainHomeScreen
 import com.myhealth.app.ui.train.TrainScreen
+import com.myhealth.app.ui.train.WorkoutLoggerScreen
 import com.myhealth.app.ui.vitals.BiologicalAgeScreen
 import com.myhealth.app.ui.vitals.VitalsScreen
+import com.myhealth.app.ui.workout.WellnessInsightsScreen
 import com.myhealth.app.ui.workout.WorkoutHomeScreen
 
 const val ONBOARDING_KEY = "did_onboard"
@@ -84,6 +105,7 @@ object Routes {
     const val DOCTOR_DETAIL = "doctor_detail" // doctor_detail/{npi}
     const val ANNUAL_REPORTS = "annual_reports"
     const val SYMPTOMS_LOG = "symptoms_log"
+    const val MOOD_TRACKING = "mood_tracking"
 
     // Diet sub-routes
     const val VENDOR_BROWSE = "vendor_browse"
@@ -91,6 +113,8 @@ object Routes {
     const val ORDER_CHECKOUT = "order_checkout"
     const val MEAL_LOG_ENTRY = "meal_log_entry"
     const val WATER_TRACKER = "water_tracker"
+    const val DIET_SUGGESTIONS = "diet_suggestions"
+    const val FOOD_DIARY = "food_diary"
 
     // Train sub-routes
     const val STANDUP_TIMER = "standup_timer"
@@ -169,7 +193,11 @@ fun MyHealthRoot(rootViewModel: RootViewModel = hiltViewModel()) {
         NavHost(
             navController = nav,
             startDestination = Routes.CARE,
-            modifier = Modifier.padding(padding)
+            modifier = Modifier.padding(padding),
+            enterTransition = { fadeIn() + slideInHorizontally { it / 4 } },
+            exitTransition = { fadeOut() + slideOutHorizontally { -it / 4 } },
+            popEnterTransition = { fadeIn() + slideInHorizontally { -it / 4 } },
+            popExitTransition = { fadeOut() + slideOutHorizontally { it / 4 } }
         ) {
             // ─── Primary tabs ─────────────────────────────────────────────
             composable(Routes.CARE) { CareHomeScreen(nav) }
@@ -178,8 +206,14 @@ fun MyHealthRoot(rootViewModel: RootViewModel = hiltViewModel()) {
             composable(Routes.WORKOUT) { WorkoutHomeScreen(nav) }
 
             // ─── Header destinations ──────────────────────────────────────
-            composable(Routes.PROFILE) { ProfileScreen() }
-            composable(Routes.SETTINGS) { SettingsScreen() }
+            composable(
+                Routes.PROFILE,
+                deepLinks = listOf(navDeepLink { uriPattern = "myhealth://profile" })
+            ) { ProfileScreen(nav = nav, onNavigateToBioAge = { nav.navigate(Routes.BIO_AGE) }) }
+            composable(
+                Routes.SETTINGS,
+                deepLinks = listOf(navDeepLink { uriPattern = "myhealth://settings" })
+            ) { SettingsScreen(nav = nav) }
             composable(Routes.NEWS_DRAWER) { NewsDrawerSheet(onDismiss = { nav.popBackStack() }) }
 
             // ─── Care ─────────────────────────────────────────────────────
@@ -194,31 +228,64 @@ fun MyHealthRoot(rootViewModel: RootViewModel = hiltViewModel()) {
             ) { back ->
                 DoctorDetailScreen(npi = back.arguments?.getString("npi") ?: "")
             }
-            composable(Routes.ANNUAL_REPORTS) { ComingSoon("Annual reports") }
-            composable(Routes.SYMPTOMS_LOG)   { ComingSoon("Symptoms log") }
+            composable(Routes.ANNUAL_REPORTS) { AnnualReportsScreen(nav) }
+            composable(Routes.SYMPTOMS_LOG)   { SymptomsLogScreen(nav) }
+            composable(
+                Routes.MOOD_TRACKING,
+                deepLinks = listOf(navDeepLink { uriPattern = "myhealth://mood" })
+            ) { MoodTrackingScreen(nav) }
 
             // ─── Diet ─────────────────────────────────────────────────────
             composable(Routes.VENDOR_BROWSE)    { VendorBrowseScreen() }
-            composable(Routes.MEAL_PLAN_DETAIL) { ComingSoon("Meal plan") }
-            composable(Routes.ORDER_CHECKOUT)   { ComingSoon("Order checkout") }
-            composable(Routes.MEAL_LOG_ENTRY)   { ComingSoon("Meal log entry") }
-            composable(Routes.WATER_TRACKER)    { ComingSoon("Water tracker") }
+            composable(Routes.MEAL_PLAN_DETAIL) { MealPlanDetailScreen(nav) }
+            composable(Routes.ORDER_CHECKOUT)   { OrderCheckoutScreen(nav) }
+            composable(Routes.MEAL_LOG_ENTRY)   { FoodDiaryScreen() }
+            composable(Routes.DIET_SUGGESTIONS) { DietSuggestionsScreen() }
+            composable(Routes.FOOD_DIARY)       { FoodDiaryScreen() }
+            composable(Routes.WATER_TRACKER)    { WaterTrackerScreen(nav) }
 
             // ─── Train ────────────────────────────────────────────────────
             composable(Routes.STANDUP_TIMER)   { StandupTimerScreen() }
-            composable(Routes.TODAY_PLAN)      { ComingSoon("Today's plan") }
-            composable(Routes.EXERCISE_DETAIL) { ComingSoon("Exercise detail") }
-            composable(Routes.WORKOUT_LIBRARY) { ComingSoon("Workout library") }
-            composable(Routes.PROGRESS_REPORT) { ComingSoon("Progress report") }
-            composable(Routes.RECOVERY_DAY)    { ComingSoon("Recovery day") }
+            composable(Routes.TODAY_PLAN)      { TodayPlanScreen(nav) }
+            composable(
+                "${Routes.EXERCISE_DETAIL}/{exerciseId}",
+                arguments = listOf(navArgument("exerciseId") { type = NavType.StringType })
+            ) { back ->
+                ExerciseDetailScreen(exerciseId = back.arguments?.getString("exerciseId") ?: "", nav = nav)
+            }
+            composable(Routes.EXERCISE_DETAIL) { ExerciseDetailScreen(exerciseId = "", nav = nav) }
+            composable(Routes.WORKOUT_LIBRARY) { ExerciseLibraryScreen(nav) }
+            composable(Routes.PROGRESS_REPORT) { ProgressReportScreen(nav) }
+            composable(Routes.RECOVERY_DAY)    { RecoveryDayScreen(nav) }
 
             // ─── Workout ──────────────────────────────────────────────────
-            composable(Routes.RUN_TRACKER)       { ComingSoon("Run tracker") }
-            composable(Routes.WORKOUT_LOGGER)    { ComingSoon("Workout logger") }
-            composable(Routes.SLEEP)             { SleepScreen() }
-            composable(Routes.WELLNESS_INSIGHTS) { ComingSoon("Wellness insights") }
-            composable(Routes.COMMUNITY_HUB)     { ComingSoon("Community hub") }
-            composable(Routes.CHALLENGE_DETAIL)  { ComingSoon("Challenge detail") }
+            composable(Routes.RUN_TRACKER)       { RunTrackerScreen(nav) }
+            composable(Routes.WORKOUT_LOGGER)    { WorkoutLoggerScreen(nav) }
+            composable(Routes.SLEEP)             { SleepScreen(nav) }
+            composable(Routes.WELLNESS_INSIGHTS) { WellnessInsightsScreen(nav) }
+            composable(Routes.COMMUNITY_HUB)     { CommunityHubScreen(nav) }
+            composable(
+                "challenge_detail/{challengeId}",
+                arguments = listOf(navArgument("challengeId") { type = NavType.IntType })
+            ) { back ->
+                ChallengeDetailScreen(
+                    challengeId = back.arguments?.getInt("challengeId") ?: 0,
+                    nav = nav,
+                )
+            }
+            composable(
+                "live_run",
+                deepLinks = listOf(navDeepLink { uriPattern = "myhealth://run" })
+            ) { LiveRunScreen(nav) }
+            composable(
+                "run_detail/{sessionId}",
+                arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+            ) { back ->
+                RunDetailScreen(
+                    sessionId = back.arguments?.getString("sessionId") ?: "",
+                    nav = nav,
+                )
+            }
 
             // ─── Existing kept reachable ──────────────────────────────────
             composable(Routes.HOME)     { HomeScreen(nav) }

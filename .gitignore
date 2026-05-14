@@ -142,3 +142,21 @@ android/wear/src/main/assets/health-connect-permissions.cache
 *.phi.sqlite-journal
 phi-export/
 audit-log-export/
+
+# ── Temporary test artifacts ────────────────────────────────────────
+*.png
+android_ui*.xml
+*_test_results.txt
+*_deep_test_results.txt
+test_*.sh
+test_*.py
+android_screens/
+android_screens_deep/
+android_verification/
+ios_screens/
+ios_screens_deep/
+ios_screenshots/
+
+# ── SQLite WAL/SHM ──────────────────────────────────────────────────
+*.db-shm
+*.db-wal

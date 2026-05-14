@@ -20,8 +20,14 @@ targets:
       - path: FitFusion
     info:
       path: FitFusion/Info.plist
+      properties:
+        NSHealthShareUsageDescription: FitFusion reads your health data to display activity, nutrition, and workout summaries.
+        NSHealthUpdateUsageDescription: FitFusion writes workout and nutrition entries to Apple Health.
     entitlements:
       path: FitFusion/FitFusion.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
     dependencies:
       - package: FitFusionCore
         product: FitFusionCore
@@ -46,6 +52,9 @@ targets:
       - path: MyHealthLiveActivity
     info:
       path: MyHealthLiveActivity/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
       path: MyHealthLiveActivity/MyHealthLiveActivity.entitlements
     settings:
@@ -61,6 +70,9 @@ targets:
       - path: MyHealthWidget
     info:
       path: MyHealthWidget/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
       path: MyHealthWidget/MyHealthWidget.entitlements
     settings:
@@ -76,6 +88,9 @@ targets:
       - path: MyHealthMessages
     info:
       path: MyHealthMessages/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.message-payload-provider
     entitlements:
       path: MyHealthMessages/MyHealthMessages.entitlements
     settings:

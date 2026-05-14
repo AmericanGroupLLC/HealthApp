@@ -106,12 +106,12 @@ object CarePlanRecipe {
             "Tap to see condition-specific guidance.", emptyList())
     }
 
-    /** Stub readings — wired to Health Connect in week 2. */
-    fun readingFor(condition: String): Pair<String, Boolean>? = when (condition.lowercase()) {
-        "hypertension" -> "138/88" to false
-        "diabetest2", "diabetest1" -> "A1C 6.1" to false
-        "heartcondition" -> "HR 72" to true
-        "obesity" -> "BMI 31" to false
-        else -> null
-    }
+    fun formatReading(condition: String, bp: Pair<Double, Double>?, glucose: Double?, rhr: Double?, weight: Double?): Pair<String, Boolean>? =
+        when (condition.lowercase()) {
+            "hypertension" -> bp?.let { (s, d) -> "${s.toInt()}/${d.toInt()}" to (s < 130 && d < 80) }
+            "diabetest2", "diabetest1" -> glucose?.let { "Gluc ${String.format("%.1f", it)}" to (it < 7.0) }
+            "heartcondition" -> rhr?.let { "HR ${it.toInt()}" to (it in 50.0..100.0) }
+            "obesity" -> weight?.let { "%.1f kg".format(it) to (it < 90.0) }
+            else -> null
+        }
 }

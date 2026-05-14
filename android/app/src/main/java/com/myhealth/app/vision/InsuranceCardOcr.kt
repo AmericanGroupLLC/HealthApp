@@ -21,7 +21,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  */
 @Singleton
 class InsuranceCardOcr @Inject constructor() {
-    private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    private val recognizer by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
 
     data class Result(
         val payer: String? = null,

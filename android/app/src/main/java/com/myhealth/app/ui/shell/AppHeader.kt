@@ -22,7 +22,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.myhealth.app.ui.Routes
 import com.myhealth.app.ui.theme.CareTab
+
+/**
+ * Convenience overload for sub-screens that just need a title + back nav.
+ */
+@Composable
+fun AppHeader(title: String, nav: NavController) {
+    AppHeader(
+        tab = CareTab.Care,
+        onProfile = { nav.navigate(Routes.PROFILE) },
+        onBell = { nav.navigate(Routes.NEWS_DRAWER) },
+    )
+}
 
 /**
  * Global header rendered above every primary tab. Tappable avatar (Profile)

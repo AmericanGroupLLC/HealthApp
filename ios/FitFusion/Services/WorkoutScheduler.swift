@@ -31,9 +31,8 @@ final class WorkoutScheduler {
         do {
             let activity = HKWorkoutActivityType(rawValue: UInt(template.activityType)) ?? .traditionalStrengthTraining
             let workoutPlan = workoutKitPlan(for: template, activity: activity, override: adaptiveOverride)
-            let schedule = WorkoutKit.WorkoutSchedule(start: date, recurrence: nil)
-            let scheduledWorkout = WorkoutKit.ScheduledWorkoutPlan(workoutPlan, scheduledAt: schedule)
-            try await WorkoutKit.WorkoutScheduler.shared.schedule(scheduledWorkout)
+            let dateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+            await WorkoutKit.WorkoutScheduler.shared.schedule(workoutPlan, at: dateComponents)
         } catch {
             print("[WorkoutScheduler] schedule failed: \(error)")
         }
@@ -57,13 +56,9 @@ final class WorkoutScheduler {
         let single = SingleGoalWorkout(
             activity: activity,
             location: .indoor,
-            warmup: nil,
-            block: IntervalBlock(steps: [
-                IntervalStep(.work, goal: .time(Double(minutes) * 60, .seconds))
-            ], iterations: 1),
-            cooldown: nil
+            goal: .time(Double(minutes) * 60, .seconds)
         )
-        return WorkoutKit.WorkoutPlan(.single(single), id: UUID())
+        return WorkoutKit.WorkoutPlan(.goal(single), id: UUID())
     }
     #endif
 }

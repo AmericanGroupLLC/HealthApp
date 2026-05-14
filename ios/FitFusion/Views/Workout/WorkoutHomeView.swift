@@ -66,9 +66,16 @@ struct WorkoutHomeView: View {
                                  subtitle: "GPS pace + map.")
                         }.buttonStyle(.plain)
 
+                        NavigationLink {
+                            LiveRunView()
+                        } label: {
+                            tile(symbol: "location.fill", title: "Live run",
+                                 subtitle: "Real-time pace, distance & route.")
+                        }.buttonStyle(.plain)
+
                         sectionHeader("Strength")
                         NavigationLink {
-                            WorkoutLoggerView()
+                            ExerciseLibraryView()
                         } label: {
                             tile(symbol: "figure.strengthtraining.traditional",
                                  title: "Workout logger",
@@ -86,28 +93,33 @@ struct WorkoutHomeView: View {
 
                         sectionHeader("Coming soon")
                         NavigationLink {
-                            ComingSoon(title: "Wellness insights",
-                                       symbol: "chart.line.uptrend.xyaxis",
-                                       tint: tint, etaWeek: 5)
+                            WellnessInsightsView()
                         } label: {
                             tile(symbol: "chart.line.uptrend.xyaxis",
                                  title: "Wellness insights",
                                  subtitle: "Weekly summary across cardio, strength, sleep.")
                         }.buttonStyle(.plain)
                         NavigationLink {
-                            ComingSoon(title: "Community hub", symbol: "person.3.fill",
-                                       tint: tint, etaWeek: 6)
+                            CommunityHubView()
                         } label: {
                             tile(symbol: "person.3.fill", title: "Community hub",
                                  subtitle: "Friends, badges, leaderboards.")
                         }.buttonStyle(.plain)
                         NavigationLink {
-                            ComingSoon(title: "Challenge detail", symbol: "flag.checkered.2.crossed",
-                                       tint: tint, etaWeek: 6)
+                            ChallengeDetailView(challenge: .placeholder)
                         } label: {
                             tile(symbol: "flag.checkered.2.crossed",
                                  title: "Challenges", subtitle: "Join a challenge or start your own.")
                         }.buttonStyle(.plain)
+
+                        // ── Suggested wearables & recovery ──────────
+                        sectionHeader("Suggested wearables & recovery")
+                        vendorTile(symbol: "applewatch", name: "Whoop",
+                                   tagline: "HRV, strain & recovery band")
+                        vendorTile(symbol: "circle.circle", name: "Oura Ring",
+                                   tagline: "Sleep & readiness ring")
+                        vendorTile(symbol: "waveform.path.ecg", name: "Hyperice",
+                                   tagline: "Percussion, compression & heat")
                     }
                     .padding(CarePlusSpacing.lg)
                 }
@@ -163,6 +175,27 @@ struct WorkoutHomeView: View {
             }
             Spacer()
             Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+        }
+        .padding(CarePlusSpacing.md)
+        .background(CarePlusPalette.surfaceElevated, in: RoundedRectangle(cornerRadius: CarePlusRadius.md))
+    }
+
+    private func vendorTile(symbol: String, name: String, tagline: String) -> some View {
+        HStack(spacing: CarePlusSpacing.md) {
+            Image(systemName: symbol)
+                .font(.title3)
+                .frame(width: 36, height: 36)
+                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 9))
+                .foregroundStyle(tint)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name).font(.headline)
+                Text(tagline).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Text("Visit").font(.caption.weight(.semibold))
+                .padding(.horizontal, 10).padding(.vertical, 4)
+                .background(tint.opacity(0.15), in: Capsule())
+                .foregroundStyle(tint)
         }
         .padding(CarePlusSpacing.md)
         .background(CarePlusPalette.surfaceElevated, in: RoundedRectangle(cornerRadius: CarePlusRadius.md))

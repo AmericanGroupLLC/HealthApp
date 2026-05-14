@@ -25,5 +25,13 @@ fun TrainScreen(nav: NavController) {
         DashboardTile("Exercise library", "30+ moves with form tips") {
             nav.navigate(Routes.ANATOMY)
         }
+
+        // ── Suggested fitness vendors ────────────────────
+        Text("Suggested fitness vendors",
+            fontSize = 16.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 12.dp))
+        com.myhealth.app.data.seed.VendorSuggestions.fitnessEquipment.forEach { v ->
+            DashboardTile(v.name, v.tagline) { /* open v.url */ }
+        }
     }
 }

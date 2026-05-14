@@ -30,13 +30,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import com.myhealth.app.data.room.ProfileDao
+import com.myhealth.app.data.room.ProfileEntity
 import com.myhealth.app.ui.theme.CarePlusColor
 import com.myhealth.app.vision.LabReportOcr
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -136,10 +140,31 @@ private fun Field(label: String, value: String?) =
 @HiltViewModel
 class LabReportViewModel @Inject constructor(
     val ocr: LabReportOcr,
+    private val profileDao: ProfileDao,
 ) : ViewModel() {
-    suspend fun save(@Suppress("UNUSED_PARAMETER") r: LabReportOcr.Result) {
-        // TODO week-2: persist via existing /api/profile/metrics endpoints
-        // (analogous to iOS LabReportSheet.save). For now no-op so the
-        // screen compiles cleanly and the UX flow is testable end-to-end.
+    suspend fun save(r: LabReportOcr.Result) {
+        withContext(Dispatchers.IO) {
+            if (r.weightKg != null) {
+                val existing = profileDao.observe().firstOrNull()
+                profileDao.upsert(
+                    (existing ?: ProfileEntity()).copy(weightKg = r.weightKg)
+                )
+            }
+            Log.i(
+                "LabReport",
+                buildString {
+                    append("Lab saved:")
+                    r.a1c?.let { append(" A1C=$it") }
+                    r.fastingGlucose?.let { append(" glucose=$it") }
+                    if (r.bpSystolic != null) append(" BP=${r.bpSystolic}/${r.bpDiastolic}")
+                    r.cholesterolTotal?.let { append(" chol=$it") }
+                    r.ldl?.let { append(" LDL=$it") }
+                    r.hdl?.let { append(" HDL=$it") }
+                    r.triglycerides?.let { append(" trig=$it") }
+                    r.bmi?.let { append(" BMI=$it") }
+                    r.weightKg?.let { append(" weight=$it") }
+                }
+            )
+        }
     }
 }

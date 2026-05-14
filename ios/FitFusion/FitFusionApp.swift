@@ -25,6 +25,13 @@ struct FitFusionApp: App {
             UserDefaults.standard.removeObject(forKey: "token")
         }
 
+        // Simulator shortcut: launch with `-autoGuest` to skip login AND
+        // onboarding, landing directly on the 4-tab main experience.
+        if ProcessInfo.processInfo.arguments.contains("-autoGuest") {
+            UserDefaults.standard.set(true, forKey: "isGuest")
+            UserDefaults.standard.set(true, forKey: AuthStore.didOnboardKey)
+        }
+
         // Crash reporting — opt-in via Settings + DSN must be configured.
         // No-op when either is absent. Privacy stays first.
         let release = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"

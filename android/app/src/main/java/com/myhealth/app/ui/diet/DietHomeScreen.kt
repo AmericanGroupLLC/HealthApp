@@ -35,17 +35,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.myhealth.app.data.prefs.SettingsRepository
+import com.myhealth.app.data.room.MealDao
 import com.myhealth.app.ui.Routes
+import com.myhealth.app.ui.common.StateWrapper
+import com.myhealth.app.ui.common.UiState
 import com.myhealth.app.ui.shell.AppHeader
 import com.myhealth.app.ui.theme.CarePlusColor
 import com.myhealth.app.ui.theme.CareTab
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.stateIn
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Diet tab home matching the design-spec mockup. Mirrors iOS
@@ -59,8 +68,8 @@ fun DietHomeScreen(
 ) {
     val tint = CarePlusColor.DietCoral
     val condition by vm.priorityCondition.collectAsState(initial = null)
+    val macrosState by vm.macrosState.collectAsState()
     var waterCups by remember { mutableIntStateOf(5) }
-    val kcalConsumed = 1420
     val kcalGoal = 1800
 
     Column(Modifier.fillMaxSize()) {
@@ -69,16 +78,18 @@ fun DietHomeScreen(
             onProfile = { nav.navigate(Routes.PROFILE) },
             onBell = { nav.navigate(Routes.NEWS_DRAWER) },
         )
+
+        StateWrapper(state = macrosState, onRetry = {}) { macros ->
         LazyColumn(
             Modifier.fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
                 Column {
-                    Text("Today · $kcalConsumed / $kcalGoal kcal",
+                    Text("Today · ${macros.kcal} / $kcalGoal kcal",
                         fontWeight = FontWeight.SemiBold)
                     LinearProgressIndicator(
-                        progress = { kcalConsumed.toFloat() / kcalGoal },
+                        progress = { macros.kcal.toFloat() / kcalGoal },
                         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                         color = tint
                     )
@@ -110,9 +121,9 @@ fun DietHomeScreen(
 
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MacroTile("Protein", "82g", Modifier.weight(1f))
-                    MacroTile("Carbs", "140g", Modifier.weight(1f))
-                    MacroTile("Fat", "42g", Modifier.weight(1f))
+                    MacroTile("Protein", "${macros.protein}g", Modifier.weight(1f))
+                    MacroTile("Carbs", "${macros.carbs}g", Modifier.weight(1f))
+                    MacroTile("Fat", "${macros.fat}g", Modifier.weight(1f))
                 }
             }
 
@@ -165,6 +176,23 @@ fun DietHomeScreen(
                     }
                 }
             }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                        .clickable { nav.navigate(Routes.DIET_SUGGESTIONS) },
+                    colors = CardDefaults.cardColors(tint.copy(alpha = 0.10f)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.AutoAwesome, null, tint = tint,
+                            modifier = Modifier.padding(end = 8.dp))
+                        Text("Diet suggestions for your conditions",
+                            fontWeight = FontWeight.SemiBold, color = tint)
+                    }
+                }
+            }
+        }
         }
     }
 }
@@ -209,13 +237,42 @@ private fun bannerCopy(condition: String): String = when (condition.lowercase())
     else -> "Suggestions tailored to you"
 }
 
+data class TodayMacros(val kcal: Int = 0, val protein: Int = 0, val carbs: Int = 0, val fat: Int = 0)
+
 @HiltViewModel
 class DietHomeViewModel @Inject constructor(
     settings: SettingsRepository,
+    mealDao: MealDao,
 ) : ViewModel() {
     private val priority = listOf("diabetest2","diabetest1","hypertension",
                                   "heartcondition","kidneyissue")
     val priorityCondition = settings.healthConditions.map { set ->
         priority.firstOrNull { it in set.map(String::lowercase) }
+    }
+
+    private val startOfDay = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    private val _macrosState = MutableStateFlow<UiState<TodayMacros>>(UiState.Loading)
+    val macrosState: StateFlow<UiState<TodayMacros>> = _macrosState
+
+    init { loadMacros(mealDao) }
+
+    private fun loadMacros(mealDao: MealDao) {
+        viewModelScope.launch {
+            try {
+                mealDao.observeSince(startOfDay).collect { meals ->
+                    _macrosState.value = UiState.Success(
+                        TodayMacros(
+                            kcal = meals.sumOf { it.kcal }.toInt(),
+                            protein = meals.sumOf { it.protein }.toInt(),
+                            carbs = meals.sumOf { it.carbs }.toInt(),
+                            fat = meals.sumOf { it.fat }.toInt(),
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                _macrosState.value = UiState.Error(e.message ?: "Failed to load meals")
+            }
+        }
     }
 }

@@ -32,7 +32,7 @@ function auditLog(req, res, next) {
         `INSERT INTO audit_log (user_id, method, path, status, ip, user_agent, created_at)
          VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`
       ).run(
-        req.user && req.user.id ? req.user.id : null,
+        req.user && (req.user.sub || req.user.id) ? (req.user.sub || req.user.id) : null,
         req.method,
         req.originalUrl || req.url,
         res.statusCode,
@@ -47,7 +47,7 @@ function auditLog(req, res, next) {
       const ms = Date.now() - start;
       console.log(
         `[audit] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${ms}ms) user=${
-          req.user && req.user.id ? req.user.id : '-'
+          req.user && (req.user.sub || req.user.id) ? (req.user.sub || req.user.id) : '-'
         }`
       );
     }

@@ -24,6 +24,8 @@ db.exec(`
     weight_kg      REAL,
     activity_level TEXT,
     goal           TEXT,
+    birthday       TEXT,
+    birth_location TEXT,
     updated_at     TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
@@ -189,6 +191,31 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(user_id, issuer)
   );
+
+  -- ─── Wave 1: Symptom & Water tracking ─────────────────────────────
+
+  CREATE TABLE IF NOT EXISTS symptom_log (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id        INTEGER NOT NULL,
+    body_location  TEXT NOT NULL,
+    pain_scale     INTEGER NOT NULL CHECK(pain_scale BETWEEN 1 AND 10),
+    duration_hours REAL,
+    notes          TEXT,
+    created_at     TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_symptom_user_time
+    ON symptom_log(user_id, created_at DESC);
+
+  CREATE TABLE IF NOT EXISTS water_log (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id      INTEGER NOT NULL,
+    milliliters  REAL NOT NULL,
+    logged_at    TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_water_user_time
+    ON water_log(user_id, logged_at DESC);
 `);
 
 module.exports = db;

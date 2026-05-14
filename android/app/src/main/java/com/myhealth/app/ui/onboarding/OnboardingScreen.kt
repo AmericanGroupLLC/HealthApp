@@ -49,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -81,6 +82,7 @@ fun OnboardingScreen(
     val pagerState = rememberPagerState(pageCount = { 6 })
     val scope = rememberCoroutineScope()
     var name by remember { mutableStateOf("") }
+    var selectedGoal by remember { mutableStateOf("") }
     val selectedConditions = remember { mutableStateListOf<String>() }
 
     Box(
@@ -102,9 +104,9 @@ fun OnboardingScreen(
                     scope.launch { pagerState.animateScrollToPage(3) }
                 }
                 3 -> PermissionsPage { scope.launch { pagerState.animateScrollToPage(4) } }
-                4 -> GoalPage { scope.launch { pagerState.animateScrollToPage(5) } }
+                4 -> GoalPage(selectedGoal, { selectedGoal = it }) { scope.launch { pagerState.animateScrollToPage(5) } }
                 5 -> HealthIssuesPage(selectedConditions) {
-                    vm.finish(name, selectedConditions.toSet())
+                    vm.finish(name, selectedGoal, selectedConditions.toSet())
                     onComplete()
                 }
             }
@@ -149,42 +151,97 @@ private fun LoginPage(onNext: () -> Unit) = Column(
         color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    OutlinedTextField(value = email, onValueChange = { email = it },
-        label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
-    OutlinedTextField(value = password, onValueChange = { password = it },
-        label = { Text("Password") }, modifier = Modifier.fillMaxWidth())
+    var showErrors by remember { mutableStateOf(false) }
+    val emailValid = email.isEmpty() || email.contains("@")
+    val passwordValid = password.isEmpty() || password.length >= 6
+    val canSubmit = email.isEmpty() || (emailValid && passwordValid)
+
+    OutlinedTextField(value = email, onValueChange = { email = it; showErrors = true },
+        label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), isError = showErrors && !emailValid)
+    if (showErrors && !emailValid) {
+        Text("Email must contain @", color = Color.Red, fontSize = 12.sp)
+    }
+    OutlinedTextField(value = password, onValueChange = { password = it; showErrors = true },
+        label = { Text("Password") }, modifier = Modifier.fillMaxWidth(), isError = showErrors && !passwordValid)
+    if (showErrors && !passwordValid) {
+        Text("Password must be at least 6 characters", color = Color.Red, fontSize = 12.sp)
+    }
     Button(onClick = onNext, modifier = Modifier.fillMaxWidth(),
+        enabled = canSubmit,
         colors = ButtonDefaults.buttonColors(containerColor = CarePlusColor.CareBlue)) {
         Text("Continue as guest", color = Color.White)
     }
 }
 
 @Composable
-private fun BirthPage(name: String, onName: (String) -> Unit, onNext: () -> Unit) = Column(
-    Modifier.fillMaxSize().padding(24.dp),
-    verticalArrangement = Arrangement.spacedBy(12.dp)
-) {
-    Text("Your birth details", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-    Text("Used for biological age + (opt-in) astro insights. Stored on this device.",
-        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-    OutlinedTextField(value = name, onValueChange = onName, label = { Text("Name") },
-        modifier = Modifier.fillMaxWidth())
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.Filled.Cake, null, tint = CarePlusColor.CareBlue,
-            modifier = Modifier.padding(end = 8.dp))
-        Text("DOB picker — wired to a date dialog in week 2.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-    }
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.Filled.AccessTime, null, tint = CarePlusColor.CareBlue,
-            modifier = Modifier.padding(end = 8.dp))
-        Text("Approximate time of birth — wired in week 2.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-    }
-    Spacer(Modifier.weight(1f))
-    Button(onClick = onNext, modifier = Modifier.fillMaxWidth(), enabled = name.isNotBlank(),
-        colors = ButtonDefaults.buttonColors(containerColor = CarePlusColor.CareBlue)) {
-        Text("Continue", color = Color.White)
+private fun BirthPage(name: String, onName: (String) -> Unit, onNext: () -> Unit) {
+    var birthday by remember { mutableStateOf<java.time.LocalDate?>(null) }
+    var birthLocation by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
+    Column(
+        Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text("Your birth details", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text("Used for biological age + (opt-in) astro insights. Stored on this device.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+        OutlinedTextField(value = name, onValueChange = onName, label = { Text("Name") },
+            modifier = Modifier.fillMaxWidth())
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(12.dp),
+            onClick = {
+                val cal = java.util.Calendar.getInstance()
+                android.app.DatePickerDialog(
+                    context,
+                    { _, y, m, d -> birthday = java.time.LocalDate.of(y, m + 1, d) },
+                    cal.get(java.util.Calendar.YEAR) - 25,
+                    cal.get(java.util.Calendar.MONTH),
+                    cal.get(java.util.Calendar.DAY_OF_MONTH)
+                ).show()
+            }
+        ) {
+            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Cake, null, tint = CarePlusColor.CareBlue,
+                    modifier = Modifier.padding(end = 8.dp))
+                Text(
+                    birthday?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy"))
+                        ?: "Tap to set your birthday",
+                    color = if (birthday != null) MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp
+                )
+            }
+        }
+
+        if (birthday != null) {
+            val zodiac = com.myhealth.core.intelligence.ZodiacHelper.fromDate(birthday!!)
+            Text(
+                "${zodiac.symbol} ${zodiac.name}",
+                fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
+                color = CarePlusColor.CareBlue
+            )
+        }
+
+        OutlinedTextField(
+            value = birthLocation, onValueChange = { birthLocation = it },
+            label = { Text("Birthplace (city)") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.AccessTime, null, tint = CarePlusColor.CareBlue,
+                modifier = Modifier.padding(end = 8.dp))
+            Text("Approximate time of birth (optional)",
+                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+        }
+        Spacer(Modifier.weight(1f))
+        Button(onClick = onNext, modifier = Modifier.fillMaxWidth(), enabled = name.isNotBlank(),
+            colors = ButtonDefaults.buttonColors(containerColor = CarePlusColor.CareBlue)) {
+            Text("Continue", color = Color.White)
+        }
     }
 }
 
@@ -262,20 +319,21 @@ private fun PermRow(icon: ImageVector, title: String, subtitle: String,
     }
 
 @Composable
-private fun GoalPage(onNext: () -> Unit) = Column(
+private fun GoalPage(selectedGoal: String, onGoalSelected: (String) -> Unit, onNext: () -> Unit) = Column(
     Modifier.fillMaxSize().padding(24.dp),
     verticalArrangement = Arrangement.spacedBy(12.dp)
 ) {
     Text("What's your goal?", fontSize = 22.sp, fontWeight = FontWeight.Bold)
     listOf("Lose weight","Maintain","Build muscle","Improve endurance","General wellness")
         .forEach { g ->
-            Button(onClick = {}, modifier = Modifier.fillMaxWidth(),
+            Button(onClick = { onGoalSelected(g) }, modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )) { Text(g) }
+                    containerColor = if (g == selectedGoal) CarePlusColor.CareBlue
+                        else MaterialTheme.colorScheme.surfaceVariant
+                )) { Text(g, color = if (g == selectedGoal) Color.White else Color.Unspecified) }
         }
     Spacer(Modifier.weight(1f))
-    Button(onClick = onNext, modifier = Modifier.fillMaxWidth(),
+    Button(onClick = onNext, modifier = Modifier.fillMaxWidth(), enabled = selectedGoal.isNotEmpty(),
         colors = ButtonDefaults.buttonColors(containerColor = CarePlusColor.CareBlue)) {
         Text("Continue", color = Color.White)
     }
@@ -315,9 +373,10 @@ private fun HealthIssuesPage(selected: MutableList<String>, onFinish: () -> Unit
 class OnboardingViewModel @Inject constructor(
     private val settings: SettingsRepository,
 ) : ViewModel() {
-    fun finish(name: String, conditions: Set<String>) {
+    fun finish(name: String, goal: String, conditions: Set<String>) {
         viewModelScope.launch {
             settings.setDidOnboard(true)
+            settings.setGoal(goal)
             settings.setHealthConditions(conditions.ifEmpty { setOf("none") })
         }
     }

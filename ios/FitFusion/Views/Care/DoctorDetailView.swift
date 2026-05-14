@@ -47,22 +47,36 @@ struct DoctorDetailView: View {
                 }
                 .disabled(favorited)
 
-                NavigationLink {
-                    ComingSoon(title: "Book appointment", symbol: "calendar.badge.plus",
-                               tint: tint, etaWeek: 4)
-                } label: {
-                    HStack {
-                        Image(systemName: "calendar.badge.plus").foregroundStyle(tint)
-                        Text("Book an appointment")
-                        Spacer()
-                        Image(systemName: "chevron.right").foregroundStyle(.tertiary)
-                    }
-                    .padding()
-                    .background(CarePlusPalette.surfaceElevated,
-                                in: RoundedRectangle(cornerRadius: 12))
-                }.buttonStyle(.plain)
+                if let phone = provider.phone, !phone.isEmpty,
+                   let url = URL(string: "tel://\(phone)") {
+                    Link(destination: url) {
+                        HStack {
+                            Image(systemName: "phone.fill").foregroundStyle(tint)
+                            Text("Call Office")
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                        }
+                        .padding()
+                        .background(CarePlusPalette.surfaceElevated,
+                                    in: RoundedRectangle(cornerRadius: 12))
+                    }.buttonStyle(.plain)
+                }
 
-                Text("Listing data: NPPES public registry. Booking via Ribbon Health (v1.1).")
+                if let email = appointmentEmail {
+                    Link(destination: email) {
+                        HStack {
+                            Image(systemName: "envelope.fill").foregroundStyle(tint)
+                            Text("Request Appointment")
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                        }
+                        .padding()
+                        .background(tint, in: RoundedRectangle(cornerRadius: 12))
+                        .foregroundStyle(.white)
+                    }.buttonStyle(.plain)
+                }
+
+                Text("Listing data: NPPES public registry.")
                     .font(.caption2).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
@@ -89,5 +103,13 @@ struct DoctorDetailView: View {
             addressLine: provider.address_line, zip: provider.zip
         )
         favorited = true
+    }
+
+    private var appointmentEmail: URL? {
+        let subject = "Appointment Request – \(provider.name)"
+            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let body = "Hello,\n\nI would like to request an appointment.\n\nPatient contact via FitFusion app.\n\nThank you."
+            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        return URL(string: "mailto:?subject=\(subject)&body=\(body)")
     }
 }

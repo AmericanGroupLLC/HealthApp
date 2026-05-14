@@ -15,12 +15,12 @@ struct DietHomeView: View {
     @State private var showHeaderProfile = false
     @State private var showHeaderBell = false
 
-    // Placeholder today-totals — wired to CloudStore in week 2.
-    private let kcalConsumed: Int = 1420
-    private let kcalGoal: Int = 1800
-    private let proteinG: Int = 82
-    private let carbsG: Int = 140
-    private let fatG: Int = 42
+    // Placeholder today-totals — wired to CloudStore.
+    @State private var kcalConsumed: Int = 0
+    @State private var kcalGoal: Int = 1800
+    @State private var proteinG: Int = 0
+    @State private var carbsG: Int = 0
+    @State private var fatG: Int = 0
     @AppStorage("diet.waterCups") private var waterCups: Int = 5
     private let waterGoal: Int = 8
 
@@ -65,6 +65,22 @@ struct DietHomeView: View {
             }
         }
         .tint(tint)
+        .task { loadTodayTotals() }
+    }
+
+    private func loadTodayTotals() {
+        let meals = CloudStore.shared.fetchTodayMeals()
+        var kcal = 0.0, prot = 0.0, carb = 0.0, f = 0.0
+        for m in meals {
+            kcal += (m.value(forKey: "kcal") as? Double) ?? 0
+            prot += (m.value(forKey: "protein") as? Double) ?? 0
+            carb += (m.value(forKey: "carbs") as? Double) ?? 0
+            f += (m.value(forKey: "fat") as? Double) ?? 0
+        }
+        kcalConsumed = Int(kcal)
+        proteinG = Int(prot)
+        carbsG = Int(carb)
+        fatG = Int(f)
     }
 
     private var kcalHeader: some View {

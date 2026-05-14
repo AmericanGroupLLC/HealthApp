@@ -19,7 +19,7 @@ struct SleepStagesChart: View {
                 Chart {
                     ForEach(snapshot.stages) { s in
                         BarMark(
-                            x: .value("Start", s.start),
+                            xStart: .value("Start", s.start),
                             xEnd: .value("End", s.end),
                             y: .value("Stage", s.stage.label)
                         )

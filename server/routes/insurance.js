@@ -2,10 +2,10 @@
 
 const express = require('express');
 const db = require('../db');
-const auth = require('../middleware/auth');
+const { authRequired } = require('../middleware/auth');
 const router = express.Router();
 
-router.use(auth);
+router.use(authRequired);
 
 // Care+ v1 — store the parsed insurance card fields server-side so the
 // user gets them on every device. Raw OCR text is NEVER sent here; it

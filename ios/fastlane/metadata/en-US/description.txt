@@ -1,0 +1,46 @@
+MyHealth is your all-in-one personal health and fitness operating system. Track workouts, monitor vitals, manage diet, and stay on top of your care plan — all in one app.
+
+KEY FEATURES:
+
+CARE TAB
+• Connect MyChart via SMART-on-FHIR for read-only access to your medical records
+• Snap insurance cards and lab reports with on-device OCR — no data leaves your phone
+• Personalized care plans for hypertension, diabetes, heart conditions, and more
+• Find doctors by ZIP code and specialty
+• Medicine reminders with adherence tracking
+
+DIET TAB
+• Calorie, protein, carb, and fat tracking with daily goals
+• Water intake tracker with customizable targets
+• Barcode scanner for instant food lookup
+• Meal photo AI estimation
+• Custom meal builder and food diary
+• Diet suggestions tailored to your health conditions
+• Order from nearby restaurants (Sweetgreen, Mendocino Farms, and more)
+
+TRAIN TAB
+• Adaptive workout recommendations based on sleep, HRV, and training load
+• Today's plan with warm-up, strength, and cooldown blocks
+• Exercise library with 30+ moves and form tips
+• Anatomy picker — tap a muscle group to find exercises
+• Sedentary alert with standup timer
+• Custom workout builder
+
+WORKOUT TAB
+• Activity rings (Move, Exercise, Stand) synced with Apple Health
+• GPS run/walk tracker with pace and map
+• Workout logger for sets, reps, and perceived load
+• RPE (Rate of Perceived Exertion) rating after every session
+• Sleep stages, HRV, and recovery score
+• Wellness insights correlating cardio, strength, and recovery
+
+PRIVACY & SECURITY
+• HIPAA-aligned architecture — PHI encrypted on-device, never synced to cloud without consent
+• All OCR (insurance cards, lab reports, nutrition labels) runs 100% on-device
+• No health data in crash reports or analytics
+• Guest mode — use every feature without creating an account
+• Optional cloud sync when you're ready
+
+MyHealth works with Apple Health, HealthKit, and Apple Watch to bring all your health data into one place. Whether you're managing a chronic condition, training for a marathon, or just trying to eat better — MyHealth has you covered.
+
+Download MyHealth today and take control of your health journey.

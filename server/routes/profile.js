@@ -35,7 +35,7 @@ router.get('/', authRequired, (req, res) => {
 // PUT /api/profile  — upsert profile fields
 router.put('/', authRequired, (req, res) => {
   const userId = req.user.sub;
-  const { age, sex, height_cm, weight_kg, activity_level, goal } = req.body || {};
+  const { age, sex, height_cm, weight_kg, activity_level, goal, birthday, birth_location } = req.body || {};
 
   const existing = db
     .prepare('SELECT user_id FROM profiles WHERE user_id = ?')
@@ -50,15 +50,17 @@ router.put('/', authRequired, (req, res) => {
            weight_kg = COALESCE(?, weight_kg),
            activity_level = COALESCE(?, activity_level),
            goal = COALESCE(?, goal),
+           birthday = COALESCE(?, birthday),
+           birth_location = COALESCE(?, birth_location),
            updated_at = datetime('now')
        WHERE user_id = ?`
-    ).run(age, sex, height_cm, weight_kg, activity_level, goal, userId);
+    ).run(age, sex, height_cm, weight_kg, activity_level, goal, birthday, birth_location, userId);
   } else {
     db.prepare(
       `INSERT INTO profiles
-        (user_id, age, sex, height_cm, weight_kg, activity_level, goal)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).run(userId, age, sex, height_cm, weight_kg, activity_level, goal);
+        (user_id, age, sex, height_cm, weight_kg, activity_level, goal, birthday, birth_location)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(userId, age, sex, height_cm, weight_kg, activity_level, goal, birthday, birth_location);
   }
 
   const profile = db
